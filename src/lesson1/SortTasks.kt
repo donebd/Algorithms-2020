@@ -2,6 +2,10 @@
 
 package lesson1
 
+import java.io.File
+import java.lang.IllegalArgumentException
+import kotlin.math.abs
+
 /**
  * Сортировка времён
  *
@@ -33,7 +37,33 @@ package lesson1
  * В случае обнаружения неверного формата файла бросить любое исключение.
  */
 fun sortTimes(inputName: String, outputName: String) {
-    TODO()
+    require(!File(inputName).readLines().none { Regex("""(([0-9]{2}:[0-9]{2}:[0-9]{2}) [AaPp][Mm])""").matches(it) })
+    val times = mutableListOf<Pair<String, Int>>()
+    for (i in File(inputName).readLines()) {
+        if (i.endsWith("AM")) {
+            times.add(Pair(i, calculateTime(i)))
+        } else {
+            times.add(Pair(i, calculateTime(i) + 23 * 3600 + 59 * 60 + 60))
+            // добавляем максимально возможное время чтобы все am > pm
+        }
+    }
+    times.sortBy { it.second }
+    val writer = File(outputName).bufferedWriter()
+    times.map {
+        writer.write(it.first)
+        writer.newLine()
+    }
+    writer.close()
+}/* время O(N*logN)
+    память O(N)*/
+
+private fun calculateTime(str: String): Int {
+    var hrs = str.substring(0..1).toInt()
+    val minute = str.substring(3..4).toInt()
+    val seconds = str.substring(6..7).toInt()
+    if (hrs > 12 || minute > 60 || seconds > 60 || hrs == 0) throw IllegalArgumentException()
+    if (hrs == 12) hrs = 0
+    return hrs * 3600 + minute * 60 + seconds
 }
 
 /**
@@ -97,8 +127,23 @@ fun sortAddresses(inputName: String, outputName: String) {
  * 121.3
  */
 fun sortTemperatures(inputName: String, outputName: String) {
-    TODO()
-}
+    val count = IntArray(7731)// -2730..5000
+    for (element in File(inputName).readLines()) {
+        count[(element.toDouble() * 10).toInt() + 2730]++
+    }
+    val writer = File(outputName).bufferedWriter()
+    for (i in count.indices) {
+        for (j in 1..count[i]) {
+            if (i < 2730) writer.write("-")
+            writer.write("${abs((i - 2730) / 10)}")
+            writer.write(".")
+            writer.write("${abs((i - 2730) % 10)}")
+            writer.newLine()
+        }
+    }
+    writer.close()
+}/* время O(N)
+    память O(Const) Const = 7731*/
 
 /**
  * Сортировка последовательности
@@ -130,8 +175,40 @@ fun sortTemperatures(inputName: String, outputName: String) {
  * 2
  */
 fun sortSequence(inputName: String, outputName: String) {
-    TODO()
-}
+    val map = mutableMapOf<String, Int>()
+    for (i in File(inputName).readLines()) {
+        if (map[i] == null) map[i] = 1
+        else map[i] = map[i]!! + 1
+    }
+
+    if (map.isEmpty()) {
+        File(outputName).writeText("")
+        return
+    }
+
+    var maxCnt = 0
+    for (i in map) {
+        if (i.value > maxCnt) {
+            maxCnt = i.value
+        }
+    }
+
+    val minStr = map.filterKeys { map[it] == maxCnt }.minBy { it.key.toInt() }!!.key
+
+    val writer = File(outputName).bufferedWriter()
+    for (i in File(inputName).readLines()) {
+        if (i != minStr) {
+            writer.write(i)
+            writer.newLine()
+        }
+    }
+    for (i in 1..maxCnt){
+        writer.write(minStr)
+        writer.newLine()
+    }
+    writer.close()
+}/* время O(n), наверное
+    память O(n)*/
 
 /**
  * Соединить два отсортированных массива в один
@@ -148,6 +225,14 @@ fun sortSequence(inputName: String, outputName: String) {
  * Результат: second = [1 3 4 9 9 13 15 20 23 28]
  */
 fun <T : Comparable<T>> mergeArrays(first: Array<T>, second: Array<T?>) {
-    TODO()
-}
-
+    var li = 0
+    var ri = first.size
+    for (i in second.indices) {
+        if (li < first.size && (ri == second.size || first[li] <= second[ri]!!)) {
+            second[i] = first[li++]
+        } else {
+            second[i] = second[ri++]
+        }
+    }
+}/* время O(n)
+    память O(2)*/
