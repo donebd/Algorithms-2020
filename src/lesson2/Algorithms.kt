@@ -2,6 +2,10 @@
 
 package lesson2
 
+import java.io.File
+import java.lang.IllegalArgumentException
+import kotlin.math.sqrt
+
 /**
  * Получение наибольшей прибыли (она же -- поиск максимального подмассива)
  * Простая
@@ -27,7 +31,42 @@ package lesson2
  * В случае обнаружения неверного формата файла бросить любое исключение.
  */
 fun optimizeBuyAndSell(inputName: String): Pair<Int, Int> {
-    TODO()
+    val data = File(inputName).readLines().map { it.toInt() }
+    if (data.size < 2) throw IllegalArgumentException()
+    val subArray = IntArray(File(inputName).readLines().map { it.toInt() }.size - 1)
+    for (i in data.indices) {
+        if (i == 0) continue
+        subArray[i - 1] = data[i] - data[i - 1]
+    }
+
+    val answer = maxSubArray(subArray)
+
+    return Pair(answer.first + 1, answer.second + 2)
+}/* время O(n)
+    память O(n)*/
+
+private fun maxSubArray(array: IntArray): Pair<Int, Int> {
+    var li = 0
+    var ri = 0
+    var range = Pair(0, 0)
+    var current = 0
+    var maxSum = array[0]
+    while (ri < array.size) {
+        current += array[ri]
+
+        if (current > maxSum) {
+            maxSum = current
+            range = Pair(li, ri)
+        }
+
+        if (current < 0) {
+            current = 0
+            li = ri + 1
+        }
+
+        ri++
+    }
+    return range
 }
 
 /**
@@ -80,8 +119,13 @@ fun optimizeBuyAndSell(inputName: String): Pair<Int, Int> {
  * но приветствуется попытка решить её самостоятельно.
  */
 fun josephTask(menNumber: Int, choiceInterval: Int): Int {
-    TODO()
-}
+    var res = 0
+    for (i in 1..menNumber) {
+        res = (res + choiceInterval) % i
+    }
+    return res + 1
+}/* Время O(n)
+    Память O(1)*/
 
 /**
  * Наибольшая общая подстрока.
@@ -95,8 +139,19 @@ fun josephTask(menNumber: Int, choiceInterval: Int): Int {
  * вернуть ту из них, которая встречается раньше в строке first.
  */
 fun longestCommonSubstring(first: String, second: String): String {
-    TODO()
-}
+    val data = Array(first.length + 1) { IntArray(second.length + 1) }
+    var maxSubString = ""
+    for (i in first.indices)
+        for (j in second.indices) {
+            if (first[i] == second[j]) {
+                data[i + 1][j + 1] = data[i][j] + 1
+                if (data[i + 1][j + 1] > maxSubString.length)
+                    maxSubString = first.substring(i + 1 - data[i + 1][j + 1], i + 1)
+            }
+        }
+    return maxSubString
+}/* Время O(n*m)
+    Память O(n*m + 1) n,m = first,second.length*/
 
 /**
  * Число простых чисел в интервале
@@ -109,5 +164,21 @@ fun longestCommonSubstring(first: String, second: String): String {
  * Единица простым числом не считается.
  */
 fun calcPrimesNumber(limit: Int): Int {
-    TODO()
-}
+    if (limit <= 1) return 0
+    val number = BooleanArray(limit + 1) { true }
+    number[0] = false
+    number[1] = false
+    val border = sqrt(limit.toDouble()).toInt()
+    var j = 0
+    for (i in 2..border) {
+        if (number[i]) {
+            j = i * 2
+            while (j < limit + 1) {
+                number[j] = false
+                j += i
+            }
+        }
+    }
+    return number.filter { it }.size
+}/* время O(N*log(logN))
+    память O(N) */

@@ -41,10 +41,10 @@ fun sortTimes(inputName: String, outputName: String) {
     val times = mutableListOf<Pair<String, Int>>()
     for (i in File(inputName).readLines()) {
         if (i.endsWith("AM")) {
-            times.add(Pair(i, calculateTime(i)))
+            times.add(Pair(i, calculateTime(i, true)))
         } else {
-            times.add(Pair(i, calculateTime(i) + 23 * 3600 + 59 * 60 + 60))
-            // добавляем максимально возможное время чтобы все am > pm
+            times.add(Pair(i, calculateTime(i, false)))
+            // да как-то моя цепочка рассуждений, свернула не в то место в прошлый раз
         }
     }
     times.sortBy { it.second }
@@ -57,12 +57,13 @@ fun sortTimes(inputName: String, outputName: String) {
 }/* время O(N*logN)
     память O(N)*/
 
-private fun calculateTime(str: String): Int {
+private fun calculateTime(str: String, am: Boolean): Int {
     var hrs = str.substring(0..1).toInt()
     val minute = str.substring(3..4).toInt()
     val seconds = str.substring(6..7).toInt()
     if (hrs > 12 || minute > 60 || seconds > 60 || hrs == 0) throw IllegalArgumentException()
     if (hrs == 12) hrs = 0
+    if (!am) hrs += 12
     return hrs * 3600 + minute * 60 + seconds
 }
 
@@ -128,16 +129,17 @@ fun sortAddresses(inputName: String, outputName: String) {
  */
 fun sortTemperatures(inputName: String, outputName: String) {
     val count = IntArray(7731)// -2730..5000
+    val lowNumLim = 2730
     for (element in File(inputName).readLines()) {
-        count[(element.toDouble() * 10).toInt() + 2730]++
+        count[(element.toDouble() * 10).toInt() + lowNumLim]++
     }
     val writer = File(outputName).bufferedWriter()
     for (i in count.indices) {
         for (j in 1..count[i]) {
-            if (i < 2730) writer.write("-")
-            writer.write("${abs((i - 2730) / 10)}")
+            if (i < lowNumLim) writer.write("-")
+            writer.write("${abs((i - lowNumLim) / 10)}")
             writer.write(".")
-            writer.write("${abs((i - 2730) % 10)}")
+            writer.write("${abs((i - lowNumLim) % 10)}")
             writer.newLine()
         }
     }
@@ -177,8 +179,7 @@ fun sortTemperatures(inputName: String, outputName: String) {
 fun sortSequence(inputName: String, outputName: String) {
     val map = mutableMapOf<String, Int>()
     for (i in File(inputName).readLines()) {
-        if (map[i] == null) map[i] = 1
-        else map[i] = map[i]!! + 1
+        map[i] = map.getOrPut(i) { 0 } + 1
     }
 
     if (map.isEmpty()) {
@@ -202,7 +203,7 @@ fun sortSequence(inputName: String, outputName: String) {
             writer.newLine()
         }
     }
-    for (i in 1..maxCnt){
+    for (i in 1..maxCnt) {
         writer.write(minStr)
         writer.newLine()
     }
