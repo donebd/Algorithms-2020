@@ -1,5 +1,6 @@
 package lesson3
 
+import java.lang.IllegalStateException
 import java.util.*
 import kotlin.math.max
 
@@ -29,6 +30,18 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
             else -> start.right?.let { find(it, value) } ?: start
         }
     }
+
+    private fun findParent(value: T): Node<T>? =
+        root?.let { findParent(it, value, null) }
+
+    private fun findParent(start: Node<T>, value: T, parent: Node<T>?): Node<T>? {
+        val comparison = value.compareTo(start.value)
+        return when {
+            comparison == 0 -> parent
+            comparison < 0 -> start.left?.let { findParent(it, value, start) }
+            else -> start.right?.let { findParent(it, value, start) }
+        }
+    }//null if element which finding is root or element !in tree
 
     override operator fun contains(element: T): Boolean {
         val closest = find(element)
@@ -80,7 +93,52 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
      * Средняя
      */
     override fun remove(element: T): Boolean {
-        TODO()
+        val current = find(element)
+        val comparison = if (current == null) -1 else element.compareTo(current.value)
+        if (comparison != 0) return false// element !in tree
+        val parent = findParent(element)
+
+        // delete element with no subtree
+        if (current!!.left == null && current.right == null) {
+            anotherChildrenToParent(parent, current, null)
+            size--
+            return true
+        }
+
+        // delete element with one subtree
+        if ((current.left != null && current.right == null) || (current.right != null && current.left == null)) {
+            val childrenTree = if (current.left != null) current.left else current.right
+            anotherChildrenToParent(parent, current, childrenTree)
+            size--
+            return true
+        }
+
+        // delete element with two subtrees
+        var leftmost = current.right
+        while (leftmost!!.left != null) {
+            leftmost = leftmost.left
+        }
+        val leftmostParent = findParent(leftmost.value)
+        val childrenTree = if (leftmost.right != null) leftmost.right else null // leftmost node don't have left
+        anotherChildrenToParent(leftmostParent, leftmost, childrenTree)
+        leftmost.left = current.left
+        leftmost.right = current.right
+        anotherChildrenToParent(parent, current, leftmost)
+        size--
+        return true
+    }// Время O(logN)
+
+    //delete children from parent and connect other subtree
+    private fun anotherChildrenToParent(parent: Node<T>?, children: Node<T>, anotherChildren: Node<T>?) {
+        if (parent == null) {
+            root = anotherChildren
+        } else {
+            if (children.value > parent.value) {
+                parent.right = anotherChildren
+            } else {
+                parent.left = anotherChildren
+            }
+        }
     }
 
     override fun comparator(): Comparator<in T>? =
@@ -90,6 +148,20 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
         BinarySearchTreeIterator()
 
     inner class BinarySearchTreeIterator internal constructor() : MutableIterator<T> {
+
+        private var current: Node<T>? = null
+        private val stack = Stack<Node<T>?>()
+
+        init {
+            pushToLeft(root)
+        }
+
+        private fun pushToLeft(node: Node<T>?) {
+            if (node != null) {
+                stack.push(node)
+                pushToLeft(node.left)
+            }
+        }
 
         /**
          * Проверка наличия следующего элемента
@@ -102,9 +174,8 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
          * Средняя
          */
         override fun hasNext(): Boolean {
-            // TODO
-            throw NotImplementedError()
-        }
+            return stack.isNotEmpty()
+        }//Время O(1)
 
         /**
          * Получение следующего элемента
@@ -120,9 +191,13 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
          * Средняя
          */
         override fun next(): T {
-            // TODO
-            throw NotImplementedError()
-        }
+            if (stack.isEmpty()) throw NoSuchElementException()
+            else {
+                current = stack.pop()
+                pushToLeft(current!!.right)
+                return current!!.value
+            }
+        }//время O(logN) в худшем случае
 
         /**
          * Удаление предыдущего элемента
@@ -137,9 +212,12 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
          * Сложная
          */
         override fun remove() {
-            // TODO
-            throw NotImplementedError()
-        }
+            if (current == null) throw IllegalStateException()
+            else {
+                remove(current!!.value)
+                current = null
+            }
+        }//Время O(logN)
 
     }
 
