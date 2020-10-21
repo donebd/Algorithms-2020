@@ -109,6 +109,11 @@ abstract class AbstractTrieTest {
             }
             println("All clear!")
         }
+        val controlSet = mutableSetOf(" ")
+        val trieSet = create()
+        trieSet.addAll(controlSet)
+        val iterator = controlSet.iterator()
+        assertEquals(" ", iterator.next())
     }
 
     protected fun doIteratorRemoveTest() {

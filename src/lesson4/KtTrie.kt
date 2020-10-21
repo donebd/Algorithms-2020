@@ -1,11 +1,14 @@
 package lesson4
 
+import java.util.*
+
 /**
  * Префиксное дерево для строк
  */
 class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
 
     private class Node {
+        var current: String = ""
         val children: MutableMap<Char, Node> = linkedMapOf()
     }
 
@@ -43,6 +46,7 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
                 modified = true
                 val newChild = Node()
                 current.children[char] = newChild
+                newChild.current = "${current.current}$char"
                 current = newChild
             }
         }
@@ -59,7 +63,7 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
             return true
         }
         return false
-    }
+    }//Время O(log(N))//больше веток -> больше основание log -> меньше время
 
     /**
      * Итератор для префиксного дерева
@@ -68,8 +72,45 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
      *
      * Сложная
      */
-    override fun iterator(): MutableIterator<String> {
-        TODO()
+    override fun iterator(): MutableIterator<String> = TrieIterator()
+
+    inner class TrieIterator internal constructor() : MutableIterator<String> {
+
+        private var current: String? = null
+        private val stack = Stack<Pair<String, Node>>()
+        private val stackElement = Stack<String>()
+
+        init {
+            stack.push(Pair("", root))
+            fillStack(root)
+        }
+
+        private fun fillStack(node: Node?) {
+            node?.children?.map {
+                stack.push(Pair(it.value.current, it.value))
+                if (it.value.children.contains(0.toChar())) stackElement.push(it.value.current)
+                fillStack(it.value)
+            }
+        }// Время O(N)
+
+        override fun hasNext(): Boolean {
+            return stackElement.isNotEmpty()
+        }// Время O(1)
+
+        override fun next(): String {
+            if (stackElement.isEmpty()) throw IllegalStateException()
+            current = stackElement.pop()
+            return current!!
+        }// Время O(1)
+
+        override fun remove() {
+            if (current == null) throw IllegalStateException()
+            else {
+                remove(current)
+                current = null
+            }
+        }// Время O(реализация remove)
+
     }
 
 }
