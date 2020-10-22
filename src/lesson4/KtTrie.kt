@@ -77,17 +77,14 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
     inner class TrieIterator internal constructor() : MutableIterator<String> {
 
         private var current: String? = null
-        private val stack = Stack<Pair<String, Node>>()
         private val stackElement = Stack<String>()
 
         init {
-            stack.push(Pair("", root))
             fillStack(root)
         }
 
         private fun fillStack(node: Node?) {
             node?.children?.map {
-                stack.push(Pair(it.value.current, it.value))
                 if (it.value.children.contains(0.toChar())) stackElement.push(it.value.current)
                 fillStack(it.value)
             }
