@@ -8,7 +8,6 @@ import java.util.*
 class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
 
     private class Node {
-        var current: String = ""
         val children: MutableMap<Char, Node> = linkedMapOf()
     }
 
@@ -46,7 +45,6 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
                 modified = true
                 val newChild = Node()
                 current.children[char] = newChild
-                newChild.current = "${current.current}$char"
                 current = newChild
             }
         }
@@ -77,16 +75,18 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
     inner class TrieIterator internal constructor() : MutableIterator<String> {
 
         private var current: String? = null
+        private val stack = Stack<Pair<Node, String>>()
         private val stackElement = Stack<String>()
 
         init {
-            fillStack(root)
+            fillStack(root, "")
         }
 
-        private fun fillStack(node: Node?) {
+        private fun fillStack(node: Node?, string: String) {
             node?.children?.map {
-                if (it.value.children.contains(0.toChar())) stackElement.push(it.value.current)
-                fillStack(it.value)
+                if (it.value.children.contains(0.toChar())) stackElement.push(string + it.key)
+                stack.push(Pair(it.value, string + it.key))
+                fillStack(it.value, string + it.key)
             }
         }// Время O(N)
 
