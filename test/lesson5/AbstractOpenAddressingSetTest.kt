@@ -76,6 +76,12 @@ abstract class AbstractOpenAddressingSetTest {
                 )
             }
         }
+        val openAddressingSet = create<Int>(2)
+        openAddressingSet += 3
+        openAddressingSet += 2534
+        openAddressingSet += 135345
+        openAddressingSet += -45
+        assertEquals(false, 228 in openAddressingSet)//fix internal contains recursion
     }
 
     protected fun doIteratorTest() {
