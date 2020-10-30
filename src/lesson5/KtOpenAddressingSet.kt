@@ -8,7 +8,7 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
         require(bits in 2..31)
     }
 
-    private val removed = true
+    private class Removed
 
     private val capacity = 1 shl bits
 
@@ -30,7 +30,7 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
         val startingIndex = element.startingIndex()
         var index = startingIndex
         var current = storage[index]
-        while (current != null || current == removed) {
+        while (current != null || current is Removed) {
             if (current == element) {
                 return true
             }
@@ -55,7 +55,7 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
         val startingIndex = element.startingIndex()
         var index = startingIndex
         var current = storage[index]
-        while (current != null && current != removed) {
+        while (current != null && current !is Removed) {
             if (current == element) {
                 return false
             }
@@ -83,9 +83,9 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
         val startIndex = element.startingIndex()
         var index = startIndex
         var current = storage[index]
-        while (current != null && current != removed) {
+        while (current != null && current !is Removed) {
             if (current == element) {
-                storage[index] = removed
+                storage[index] = Removed()
                 size--
                 return true
             }
@@ -113,22 +113,10 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
         private var current: Any? = null
         private val tableSize = storage.size
 
-        private fun findNext() {
-            index++
-            while (index != tableSize && (storage[index] == null || storage[index] == removed)) {
-                index++
-            }
-            current = if (index != tableSize) {
-                storage[index]
-            } else {
-                null
-            }
-        }
-
-        override fun hasNext(): Boolean {
+        private fun findNext(onlyCheck: Boolean): Boolean {
             var tmpIndex = index + 1
             val tmpCurrent: Any?
-            while (tmpIndex != tableSize && (storage[tmpIndex] == null || storage[tmpIndex] == removed)) {
+            while (tmpIndex != tableSize && (storage[tmpIndex] == null || storage[tmpIndex] is Removed)) {
                 tmpIndex++
             }
             tmpCurrent = if (tmpIndex != tableSize) {
@@ -136,11 +124,19 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
             } else {
                 null
             }
+            if (!onlyCheck) {
+                current = tmpCurrent
+                index = tmpIndex
+            }
             return tmpCurrent != null
         }
 
+        override fun hasNext(): Boolean {
+            return findNext(true)
+        }
+
         override fun next(): T {
-            findNext()
+            findNext(false)
             if (current == null) throw IllegalStateException()
             return current as T
         }

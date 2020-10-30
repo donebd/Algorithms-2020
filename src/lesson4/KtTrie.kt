@@ -75,20 +75,30 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
     inner class TrieIterator internal constructor() : MutableIterator<String> {
 
         private var current: String? = null
-        private val stack = Stack<Pair<Node, String>>()
         private val stackElement = Stack<String>()
+        private val visited = mutableListOf<Map.Entry<Char, Node>>()
 
         init {
-            fillStack(root, "")
+            findNext(root, "")
         }
 
-        private fun fillStack(node: Node?, string: String) {
-            node?.children?.map {
-                if (it.value.children.contains(0.toChar())) stackElement.push(string + it.key)
-                stack.push(Pair(it.value, string + it.key))
-                fillStack(it.value, string + it.key)
+        private fun findNext(node: Node?, string: String): Boolean {// returns the presence of unvisited nodes
+            val next = node!!.children.filter { it !in visited && it.key != 0.toChar() }
+                .entries// не сильно затратная операция потому что visited, содержит только верхние посещенные элементы
+            if (next.isEmpty() && node.children.keys.contains(0.toChar())) {
+                stackElement.push(string)
+                return false
             }
-        }// Время O(N)
+            if (next.isNotEmpty()) {
+                if (!findNext(next.first().value, string + next.first().key)) {
+                    next.first().value.children.map { visited.remove(it) }//если все дети посещаны, убираем их и помещаем родителя
+                    visited.add(next.first())
+                }
+                next.map { if (it !in visited) return true }// не все дети посещаны
+            }
+            if (node.children.contains(0.toChar())) stackElement.push(string)
+            return false
+        }// Время O(A), где А = кол-во символов / кол-во элементов
 
         override fun hasNext(): Boolean {
             return stackElement.isNotEmpty()
@@ -97,6 +107,7 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
         override fun next(): String {
             if (stackElement.isEmpty()) throw IllegalStateException()
             current = stackElement.pop()
+            findNext(root, "")
             return current!!
         }// Время O(1)
 
@@ -107,6 +118,16 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
                 current = null
             }
         }// Время O(реализация remove)
+
+    }
+
+    internal class MyEntry<K, V>(override val key: K, override var value: V) : MutableMap.MutableEntry<K, V> {
+
+        override fun setValue(value: V): V {
+            val old = this.value
+            this.value = value
+            return old
+        }
 
     }
 

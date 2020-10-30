@@ -94,12 +94,16 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
      */
     override fun remove(element: T): Boolean {
         val current = find(element)
+        return remove(current, element)
+    }// Время O(logN)
+
+    private fun remove(current: Node<T>?, element: T): Boolean {
         val comparison = if (current == null) -1 else element.compareTo(current.value)
         if (comparison != 0) return false// element !in tree
-        val parent = findParent(element)
+        val parent = findParent(current!!.value)
 
         // delete element with no subtree
-        if (current!!.left == null && current.right == null) {
+        if (current.left == null && current.right == null) {
             anotherChildrenToParent(parent, current, null)
             size--
             return true
@@ -126,7 +130,7 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
         anotherChildrenToParent(parent, current, leftmost)
         size--
         return true
-    }// Время O(logN)
+    }
 
     //delete children from parent and connect other subtree
     private fun anotherChildrenToParent(parent: Node<T>?, children: Node<T>, anotherChildren: Node<T>?) {
@@ -214,7 +218,7 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
         override fun remove() {
             if (current == null) throw IllegalStateException()
             else {
-                remove(current!!.value)
+                remove(current, current!!.value)
                 current = null
             }
         }//Время O(logN)
