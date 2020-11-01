@@ -56,12 +56,16 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
 
     override fun remove(element: String): Boolean {
         val current = findNode(element) ?: return false
-        if (current.children.remove(0.toChar()) != null) {
+        return remove(current)
+    }//Время O(log(N))//больше веток -> больше основание log -> меньше время
+
+    private fun remove(element: Node): Boolean {
+        if (element.children.remove(0.toChar()) != null) {
             size--
             return true
         }
         return false
-    }//Время O(log(N))//больше веток -> больше основание log -> меньше время
+    }
 
     /**
      * Итератор для префиксного дерева
@@ -74,8 +78,8 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
 
     inner class TrieIterator internal constructor() : MutableIterator<String> {
 
-        private var current: String? = null
-        private val stackElement = Stack<String>()
+        private var current: Pair<String, Node>? = null
+        private val stackElement = Stack<Pair<String, Node>>()
         private val visited = mutableListOf<Map.Entry<Char, Node>>()
 
         init {
@@ -86,7 +90,7 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
             val next = node!!.children.filter { it !in visited && it.key != 0.toChar() }
                 .entries// не сильно затратная операция потому что visited, содержит только верхние посещенные элементы
             if (next.isEmpty() && node.children.keys.contains(0.toChar())) {
-                stackElement.push(string)
+                stackElement.push(Pair(string, node))
                 return false
             }
             if (next.isNotEmpty()) {
@@ -96,7 +100,7 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
                 }
                 next.map { if (it !in visited) return true }// не все дети посещаны
             }
-            if (node.children.contains(0.toChar())) stackElement.push(string)
+            if (node.children.contains(0.toChar())) stackElement.push(Pair(string, node))
             return false
         }// Время O(A), где А = кол-во символов / кол-во элементов
 
@@ -108,13 +112,13 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
             if (stackElement.isEmpty()) throw IllegalStateException()
             current = stackElement.pop()
             findNext(root, "")
-            return current!!
+            return current!!.first
         }// Время O(1)
 
         override fun remove() {
             if (current == null) throw IllegalStateException()
             else {
-                remove(current)
+                remove(current!!.second)
                 current = null
             }
         }// Время O(реализация remove)
